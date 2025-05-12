@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory OS Match</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f4f8;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .container {
+      display: flex;
+      gap: 50px;
+    }
+
+    .list {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .list h3 {
+      margin-top: 0;
+    }
+
+    .item {
+      padding: 10px;
+      margin: 5px 0;
+      background-color: #e0ecff;
+      border: 1px solid #7fa8e3;
+      border-radius: 5px;
+      cursor: grab;
+    }
+
+    .dropzone {
+      padding: 10px;
+      margin: 5px 0;
+      min-height: 40px;
+      background-color: #f9f9f9;
+      border: 2px dashed #ccc;
+      border-radius: 5px;
+    }
+
+    .correct {
+      background-color: #c9f7c5;
+    }
+
+    .wrong {
+      background-color: #f8c6c6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Associa i concetti del Sistema Operativo</h1>
+  <div class="container">
+    <div class="list">
+      <h3>Concetti</h3>
+      <div class="item" draggable="true" data-match="pagine">Paginazione</div>
+      <div class="item" draggable="true" data-match="blocchi">Segmentazione</div>
+      <div class="item" draggable="true" data-match="file">File System</div>
+    </div>
+    <div class="list">
+      <h3>Descrizioni</h3>
+      <div class="dropzone" data-accept="file">gestisce i file</div>
+      <div class="dropzone" data-accept="pagine">divide la memoria in pagine</div>
+      <div class="dropzone" data-accept="blocchi">divide per blocchi logici</div>
+    </div>
+  </div>
+
+  <script>
+    const items = document.querySelectorAll('.item');
+    const dropzones = document.querySelectorAll('.dropzone');
+
+    items.forEach(item => {
+      item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', item.dataset.match);
+        e.dataTransfer.setData('text/id', item.innerText);
+      });
+    });
+
+    dropzones.forEach(zone => {
+      zone.addEventListener('dragover', e => e.preventDefault());
+
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        const match = e.dataTransfer.getData('text/plain');
+        const text = e.dataTransfer.getData('text/id');
+
+        if (zone.dataset.accept === match) {
+          zone.textContent = `${text} ✔️`;
+          zone.classList.add('correct');
+          zone.classList.remove('wrong');
+        } else {
+          zone.textContent = `${text} ✖️`;
+          zone.classList.add('wrong');
+          zone.classList.remove('correct');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
