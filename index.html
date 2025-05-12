@@ -3,112 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memory OS Match</title>
+  <title>MatchOS - Gioco di Associazioni sul Sistema Operativo</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #eef2f7;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-color: #f0f4f8;
     }
 
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+      color: #2c3e50;
     }
 
     .container {
       display: flex;
-      gap: 50px;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .lists {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      flex-wrap: wrap;
     }
 
     .list {
-      background-color: #fff;
-      border: 1px solid #ccc;
-      padding: 20px;
+      flex: 1;
+      min-width: 250px;
+      background-color: #ffffff;
+      padding: 15px;
       border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    .list h3 {
-      margin-top: 0;
-    }
-
-    .item {
+    .item, .dropzone {
       padding: 10px;
-      margin: 5px 0;
-      background-color: #e0ecff;
-      border: 1px solid #7fa8e3;
+      margin: 8px 0;
+      background-color: #dfefff;
+      border: 2px solid #7fa8e3;
       border-radius: 5px;
       cursor: grab;
     }
 
     .dropzone {
-      padding: 10px;
-      margin: 5px 0;
-      min-height: 40px;
-      background-color: #f9f9f9;
-      border: 2px dashed #ccc;
-      border-radius: 5px;
+      min-height: 50px;
+      background-color: #f8f8f8;
+      border-style: dashed;
     }
 
     .correct {
-      background-color: #c9f7c5;
+      background-color: #d4edda !important;
+      border-color: #28a745 !important;
     }
 
     .wrong {
-      background-color: #f8c6c6;
+      background-color: #f8d7da !important;
+      border-color: #dc3545 !important;
+    }
+
+    .description {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      width: 200px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .lists {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Associa i concetti del Sistema Operativo</h1>
+  <h1>🎮 MatchOS</h1>
   <div class="container">
-    <div class="list">
-      <h3>Concetti</h3>
-      <div class="item" draggable="true" data-match="pagine">Paginazione</div>
-      <div class="item" draggable="true" data-match="blocchi">Segmentazione</div>
-      <div class="item" draggable="true" data-match="file">File System</div>
+    <div class="controls">
+      <input type="text" id="username" placeholder="Il tuo nome">
+      <button onclick="downloadScore()">Scarica punteggio</button>
     </div>
-    <div class="list">
-      <h3>Descrizioni</h3>
-      <div class="dropzone" data-accept="file">gestisce i file</div>
-      <div class="dropzone" data-accept="pagine">divide la memoria in pagine</div>
-      <div class="dropzone" data-accept="blocchi">divide per blocchi logici</div>
+    <div class="game-area">
+      <div class="lists">
+        <div class="list" id="conceptsList">
+          <h3>Concetti</h3>
+        </div>
+        <div class="list" id="descriptionsList">
+          <h3>Descrizioni</h3>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const items = document.querySelectorAll('.item');
-    const dropzones = document.querySelectorAll('.dropzone');
+    let data = [];
+    let score = 0;
 
-    items.forEach(item => {
-      item.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', item.dataset.match);
-        e.dataTransfer.setData('text/id', item.innerText);
+    async function fetchData() {
+      const gistUrl = 'https://gist.githubusercontent.com/salvatorecapolupo/a659f13a19082e37ca215823037899ac/raw/4883d04fd32bd99810ba97b7ec59c345b83881f4/match-os.json'; // da sostituire
+      try {
+        const response = await fetch(gistUrl);
+        data = await response.json();
+        renderGame();
+      } catch (e) {
+        console.error('Errore nel caricamento dei dati:', e);
+      }
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function renderGame() {
+      const conceptsList = document.getElementById('conceptsList');
+      const descriptionsList = document.getElementById('descriptionsList');
+      conceptsList.innerHTML = '<h3>Concetti</h3>';
+      descriptionsList.innerHTML = '<h3>Descrizioni</h3>';
+
+      const concepts = [...data];
+      const descriptions = [...data];
+      shuffle(concepts);
+      shuffle(descriptions);
+
+      concepts.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.draggable = true;
+        el.textContent = item.term;
+        el.dataset.match = item.id;
+        el.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', item.id);
+          e.dataTransfer.setData('text/label', item.term);
+        });
+        conceptsList.appendChild(el);
       });
-    });
 
-    dropzones.forEach(zone => {
-      zone.addEventListener('dragover', e => e.preventDefault());
-
-      zone.addEventListener('drop', e => {
-        e.preventDefault();
-        const match = e.dataTransfer.getData('text/plain');
-        const text = e.dataTransfer.getData('text/id');
-
-        if (zone.dataset.accept === match) {
-          zone.textContent = `${text} ✔️`;
-          zone.classList.add('correct');
-          zone.classList.remove('wrong');
-        } else {
-          zone.textContent = `${text} ✖️`;
-          zone.classList.add('wrong');
-          zone.classList.remove('correct');
-        }
+      descriptions.forEach(item => {
+        const dz = document.createElement('div');
+        dz.className = 'dropzone';
+        dz.dataset.accept = item.id;
+        dz.innerHTML = `
+          ${item.description}
+          <div class="description"><img src="${item.image}" alt="" width="100%" /></div>
+        `;
+        dz.addEventListener('dragover', e => e.preventDefault());
+        dz.addEventListener('drop', e => handleDrop(e, item));
+        descriptionsList.appendChild(dz);
       });
-    });
+    }
+
+    function handleDrop(e, item) {
+      e.preventDefault();
+      const match = e.dataTransfer.getData('text/plain');
+      const label = e.dataTransfer.getData('text/label');
+      const zone = e.target.closest('.dropzone');
+      if (!zone) return;
+
+      if (zone.dataset.accept === match) {
+        zone.classList.add('correct');
+        zone.classList.remove('wrong');
+        zone.innerHTML = `<strong>${label}</strong> ✔️<div class="description">${item.description}</div><img src="${item.image}" width="100%" />`;
+        score++;
+      } else {
+        zone.classList.add('wrong');
+        zone.classList.remove('correct');
+      }
+    }
+
+    function downloadScore() {
+      const username = document.getElementById('username').value.trim();
+      const text = `Giocatore: ${username}\nPunteggio: ${score} / ${data.length}`;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `punteggio_${username || 'utente'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    fetchData();
   </script>
 </body>
 </html>
